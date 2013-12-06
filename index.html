@@ -72,6 +72,7 @@ $.get("someTwitterApiLink", function (tweets) {
 							<li class="fragment roll-in">Nested callbacks hard to follow</li>
 							<li class="fragment roll-in">Double handling of errors required</li>
 						</ul>
+						<p><small>More <a href='#' class='image navigate-down'>below</a>...</small></p>
 					</section>
 					<section>
 						<p><small> ... to this </small></p>
@@ -103,7 +104,7 @@ $.get("someTwitterApiLink")
 				<!-- Example of nested vertical slides -->
 				<section>
 					<section>
-						<h2>Dirty implementation</h2>
+						<h2>Quick implementation</h2>
 						<p>
 							Goal is to make this work:
 						</p>
@@ -248,9 +249,8 @@ function Promise() {
 						<pre><code data-trim contenteditable class='javascript'>
 delay(1000)
 .then(
-  function(number) { // only success handler
+  function(number) { // just a success handler
     console.log(number);
-    number += 100;
   }
   //  expect error to bubble through
 )
@@ -259,7 +259,7 @@ delay(1000)
   function(errorMessage) {console.log(errorMessage)} // error handler
 );
 						</code></pre>
-						<p><small>Code is in test.js in this slideshow's <a href='https://github.com/nickick/javascript_promises_tutorial'>git repo</a>.</small></p>
+						<p><small>Code is in demo.js in this slideshow's <a href='https://github.com/nickick/javascript_promises_tutorial'>git repo</a>.</small></p>
 					</section>
 				</section>
 				<section>

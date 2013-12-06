@@ -41,7 +41,6 @@ delay(1000)
 .then(
   function(number) {
     console.log(number);
-    number += 100;
   }
 )
 .then(
