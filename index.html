@@ -51,17 +51,18 @@
 				<section>
 					<section>
 						<p><small> From this... </small></p>
-						<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
-
+						<pre><code data-trim contenteditable class='javascript'>
 $.get("someTwitterApiLink", function (tweets) {
   var shortUrls = parseTweetsForUrls(tweets);
   var mostRecentShortUrl = shortUrls[0];
   expandUrlUsingTwitterApi(mostRecentShortUrl)
   $.get(expandUrlUsingTwitterApi, function (responseBody) {
     console.log("Most recent link text:", responseBody);
+    // handle error for get to expandUrlUsingTwitterApi
     }, function(error) {
       console.error("Error with the twitterverse:", error);
     })
+    // handle error for get to someTwitterApiLink
   }, function(error) {
     console.error("Error with the twitterverse:", error);
   });
@@ -74,7 +75,7 @@ $.get("someTwitterApiLink", function (tweets) {
 					</section>
 					<section>
 						<p><small> ... to this </small></p>
-						<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+						<pre><code data-trim contenteditable class='javascript'>
 $.get("someTwitterApiLink")
   .then(function (tweets) {
     var shortUrls = parseTweetsForUrls(tweets);
@@ -86,6 +87,7 @@ $.get("someTwitterApiLink")
     function (responseBody) {
       console.log("Most recent link text:", responseBody);
     },
+    // both errors handled here
     function (error) {
       console.error("Error with the twitterverse:", error);
     }
@@ -100,15 +102,16 @@ $.get("someTwitterApiLink")
 
 				<!-- Example of nested vertical slides -->
 				<section>
-					<h2>Dirty implementation</h2>
-					<p>
-						Goal is to make this work:
-					</p>
-					<pre><code data-trim contenteditable>
+					<section>
+						<h2>Dirty implementation</h2>
+						<p>
+							Goal is to make this work:
+						</p>
+						<pre><code data-trim contenteditable  class='javascript'>
 function delay(ms) {
-  # after ms, generate number between 1 and 1000
-  # succeed on anything under 666
-  # fail on 667 and above
+  // after ms, generate number between 1 and 1000
+  // succeed on anything under 666
+  // fail on 667 and above
 }
 
 delay(1000)
@@ -120,9 +123,145 @@ delay(1000)
   function(success) { console.log(success)}, 
   function(error) {console.log(error)};
 );
-					</code></pre>
-				</section>
+						</code></pre>
+						<p><small>Click <a href='#' class='image navigate-down'>down</a> to dig in...</small></p>
+					</section>
+					<section>
+					<p><small>First, define how the promise should be returned in the delay function</small></p>
+					<pre><code data-trim contenteditable class='javascript'>
+function delay(ms) {
+  var promise = new Promise();
+  setTimeout( function() {
+    n = Math.random() * 1000
+    if ( n < 667 ){
+      promise.resolve(n); //need to implement a resolve function for success
+    } else {
+      promise.reject('over the limit'); // handles failures
+    }
+  }, ms);
+  return promise;
+}
 
+// also need to define Promise.then() to queue callbacks
+					</code></pre>
+					</section>
+
+					<section>
+						<p><small>Scaffold the resolve and reject functions, define a .then function to queue callbacks</small></p>
+						<pre><code data-trim contenteditable class='javascript'>
+function Promise() {
+  var self = this;
+  this.pending = []; // queue up success/failures to run
+
+  this.resolve = function(result) {
+    // some code to execute
+  }
+
+  this.reject = function(result) {
+    // some code to execute
+  }
+
+  this.then = function(success, failure) {
+    self.pending.push({ resolve: success, reject: failure });
+    return self; // return self to allow chaining
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+						<p><small>Make a .complete function to execute queued resolve / reject</small></p>
+						<pre><code data-trim contenteditable class='javascript'>
+function Promise() {
+  ...
+  this.complete = function(type, result) {
+    while (self.pending[0]) { // if anything is queued up
+      // pop up first with shift(), then get the type (resolve or reject)
+      callback = self.pending.shift()[type];
+      // execute if defined
+      if (callback) { callback(result) } 
+      // else pass back self to continue chaining
+      else { self }
+    }
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+						<p><small>Use .complete in resolve and reject</small></p>
+						<pre><code data-trim contenteditable class='javascript'>
+function Promise() {
+  var self = this;
+  this.pending = [];
+  this.resolve = function(result) {
+    self.complete('resolve', result);
+  },
+
+  this.reject = function(result) {
+    self.complete('reject', result);
+  }
+  ...
+  this.complete = function(type, result) {
+    while (self.pending[0]) { // if anything is queued up
+      // pop up first with shift(), then get the type (resolve or reject)
+      callback = self.pending.shift()[type];
+      // execute if defined
+      if (callback) { callback(result) } 
+      // else pass back self to continue chaining
+      else { self }
+    }
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>All together now</p>
+						<pre><code data-trim contenteditable class='javascript'>
+function Promise() {
+  var self = this;
+  this.pending = [];
+
+  this.resolve = function(result) {
+    self.complete('resolve', result);
+  },
+
+  this.reject = function(result) {
+    self.complete('reject', result);
+  }
+
+  this.then = function(success, failure) {
+    self.pending.push({ resolve: success, reject: failure });
+    return self;
+  }
+
+  this.complete = function(type, result) {
+    while (self.pending[0]) {
+      callback = self.pending.shift()[type];
+      if (callback) { callback(result) } 
+      else { self }
+    }
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>Let's run this!</p>
+						<pre><code data-trim contenteditable class='javascript'>
+delay(1000)
+.then(
+  function(number) { // only success handler
+    console.log(number);
+    number += 100;
+  }
+  //  expect error to bubble through
+)
+.then(
+  function(number) {console.log(number)},  // success handler
+  function(errorMessage) {console.log(errorMessage)} // error handler
+);
+						</code></pre>
+						<p><small>Code is in test.js in this slideshow's <a href='https://github.com/nickick/javascript_promises_tutorial'>git repo</a>.</small></p>
+					</section>
+				</section>
 				<section>
 					<h2>Sources / additional resources</h2>
 					<ul>
@@ -134,7 +273,7 @@ delay(1000)
 						<a href="http://api.jquery.com/category/deferred-object/"><li>jQuery Deferred</li></a>
 						<a href="https://github.com/kriskowal/q"><li>Q, a Javascript Promises library</li></a>
 						<br/>
-						<a href="https://github.com/hakimel/reveal.js"><li>React.js (what this is running on)</li></a>
+						<a href="https://github.com/hakimel/reveal.js"><li>Reveal.js (what this is running on)</li></a>
 					</ul>
 				</section>
 			</div>

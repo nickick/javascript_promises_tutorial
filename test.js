@@ -9,26 +9,20 @@ function Promise() {
   this.reject = function(result) {
     self.complete('reject', result);
   }
-}
 
-Promise.prototype = {
-  then: function(success, failure) {
-    this.pending.push({ resolve: success, reject: failure });
-    return this;
-  },
+  this.then = function(success, failure) {
+    self.pending.push({ resolve: success, reject: failure });
+    return self;
+  }
 
-  complete: function(type, result) {
-    while (this.pending[0]) {
-      fn = this.pending.shift()[type];
-      if (fn) {
-        fn(result)
-      } else {
-        // when error handler not specified in a then statement, skip through to error handler
-        this
-      }
+  this.complete = function(type, result) {
+    while (self.pending[0]) {
+      callback = self.pending.shift()[type];
+      if (callback) { callback(result) } 
+      else { self }
     }
   }
-};
+}
 
 function delay(ms) {
   var promise = new Promise();
